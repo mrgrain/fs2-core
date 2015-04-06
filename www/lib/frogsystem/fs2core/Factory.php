@@ -30,7 +30,7 @@ class Factory
     {
         // Resolve the class
         $class = static::resolveClassname($class);
-
+   
         // Create Reflection and save factory interface
         $this->class = new \ReflectionClass($class);
         $this->interface = $interface;
@@ -49,7 +49,7 @@ class Factory
         if (is_callable($this->interface)) {
             $args = call_user_func($this->interface, $args);
         }
-        return $class->newInstanceArgs($args);
+        return $this->class->newInstanceArgs($args);
     }    
     
     
@@ -74,7 +74,7 @@ class Factory
         
         // 2. Check for implementations
         if (isset(static::$implementations[$class])) {
-            $implementation = first(first(static::$implementations[$class]));
+            $implementation = static::$implementations[$class]->top();
             
             if(class_exists($implementation)) {
                 return $implementation;
@@ -82,7 +82,8 @@ class Factory
         }
         
         // No class found
-        throw new BadClassCallException("No implementation found for class '$class'");
+        //~ throw new BadClassCallException("No implementation found for class '$class'");
+        throw new \Exception("No implementation found for class `$class`");
     }
     
     
@@ -96,20 +97,26 @@ class Factory
      */
     public static function addImplementation($implementation, $implements, $priority = 10)
     {
-        // Init implements array
-        if (!isset(static::$implementations[$implements])) {
-            static::$implementations[$implements] = array();
+        // Check class and interface
+        if (!class_exists($implementation)) {
+            print "Failed: $implementation for $implements".PHP_EOL; 
+            return false;
         }
-
-        // Init priority array
-        if (!isset(static::$implementations[$implements][$priority])) {
-            static::$implementations[$implements][$priority] = array();
+        
+        // Init implementation priority queue
+        if (!isset(static::$implementations[$implements])) {
+            static::$implementations[$implements] = new \SplPriorityQueue();
         }
         
         // Add implementation
-        static::$implementations[$implements][$priority][] = $implementation;
+        static::$implementations[$implements]->insert($implementation, $priority);        
+        print "Added: $implementation for $implements".PHP_EOL; 
         
         // Adding successful
         return true;
+    }
+    
+    public static function i($implements) {
+        return static::$implementations[$implements];
     }
 }

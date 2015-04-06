@@ -58,8 +58,17 @@ class Frogsystem2 {
             ini_set('magic_quotes_runtime', 0);
         }
 
-        // Register autoloader: libloader
+        // Legacy autoloader
         spl_autoload_register(array($this, 'libloader'));
+        
+        // PSR-4 Loader
+        $loader = new Psr4Autoloader();
+        foreach (scandir_filter(FS2SOURCE.'/lib') as $vendor) {
+            foreach (scandir_filter(FS2SOURCE.'/lib/'.$vendor) as $package) {
+                $loader->addNamespace('\\'.$vendor.'\\'.$package, FS2SOURCE.'/lib/'.$vendor.'/'.$package);
+            }
+        } 
+        $loader->register();
 
         // Set default include path
         set_include_path(FS2SOURCE);
