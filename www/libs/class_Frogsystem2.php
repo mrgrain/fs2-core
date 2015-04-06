@@ -196,7 +196,7 @@ class Frogsystem2 {
         
         if (file_exists($filepath)) {
             include_once($filepath);
-        } else if (strtolower(substr($class, -9)) === 'exception') {
+        } else if (strtolower(substr(end($class), -9)) === 'exception') {
             include_once(FS2SOURCE.'/libs/exceptions.php');
         } else {
             return false;
