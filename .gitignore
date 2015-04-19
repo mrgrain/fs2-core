@@ -9,3 +9,5 @@ Thumbs.db
 /node_modules
 /.sass-cache
 /dist
+/www/vendor
+/.idea

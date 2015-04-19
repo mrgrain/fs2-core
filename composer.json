@@ -11,5 +11,8 @@
     "config": {
         "vendor-dir": "www/vendor"
     },
-    "require": {}
+    "require": {},
+    "autoload": {
+        "psr-4": {"Frogsystem\\FS2Core\\": "www/lib/frogsystem/fs2core"}
+    }    
 }
