@@ -6,16 +6,8 @@ abstract class PlugableInterface {
      * @var string The autloader base directory
      */
     protected static $baseDir;
-    
-    /**
-     * Get the autloader base directory
-     */
-    public static function getBaseDir() {
-        return self::$baseDir;
-    }
-    
 
-    #
+
     /**
      * Called once on installation
      */

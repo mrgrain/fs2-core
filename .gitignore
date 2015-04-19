@@ -2,12 +2,17 @@
 /www/config/main.cfg.php
 /www/config/env.cfg.php
 
-# OS-related/generic files
-Thumbs.db
-
+# frontend asset files
 /vendor/
 /node_modules
 /.sass-cache
 /dist
-/www/vendor
+
+# composer related files
+/www/lib/vendor
+
+# OS-related/generic files
+Thumbs.db
+
+# IDE related files
 /.idea
