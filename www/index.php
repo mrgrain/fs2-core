@@ -1,5 +1,5 @@
 <?php
-namespace frogsystem\frogsystem;
+namespace Frogsystem\Frogsystem;
 
 // Getting config
 @include_once(getenv('FS2CONFIG') ?: __DIR__.'/config/main.cfg.php');

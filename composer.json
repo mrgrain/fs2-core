@@ -16,9 +16,9 @@
     },
     "autoload": {
         "psr-4": {
-          "frogsystem\\frogsystem\\": "www/lib/frogsystem/frogsystem",
-          "frogsystem\\metamorphosis\\": "www/lib/frogsystem/metamorphosis",
-          "frogsystem\\spawn\\": "www/lib/frogsystem/spawn"
+          "Frogsystem\\Frogsystem\\": "www/lib/frogsystem/frogsystem",
+          "Frogsystem\\Metamorphosis\\": "www/lib/frogsystem/metamorphosis",
+          "Frogsystem\\Spawn\\": "www/lib/frogsystem/spawn"
         }
     }    
 }

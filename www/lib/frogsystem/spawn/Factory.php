@@ -1,5 +1,5 @@
 <?php
-namespace Frogsystem\FS2Core;
+namespace frogsystem\spawn;
 
 /**
  * Selects the interface implemention and provides factories for DI
@@ -8,7 +8,7 @@ namespace Frogsystem\FS2Core;
 class Factory
 {
     /**
-     * @var string      The resolved full classname.
+     * @var string      The resolved full class name.
      */
     protected $class;
     
@@ -19,10 +19,10 @@ class Factory
     
     
     /**
-     * Creates a specialized factory for the requested classname by selecting the implementation
+     * Creates a specialized factory for the requested class name by selecting the implementation
      * and defining a factory interface.
-     * 
-     * @param string    $class      The class to be intanceiated.
+     *
+     * @param string $class The class to be instantiated.
      * @param callable  $interface  The Factory interface callable, which will return an array of arguments.
      * @return Factory
      */

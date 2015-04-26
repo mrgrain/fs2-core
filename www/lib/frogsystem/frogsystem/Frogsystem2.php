@@ -1,8 +1,7 @@
 <?php
+namespace Frogsystem\Frogsystem;
 
-namespace frogsystem\frogsystem;
-
-use frogsystem\metamorphosis\WebApp;
+use Frogsystem\Metamorphosis\WebApp;
 
 class Frogsystem2 extends WebApp {
 
@@ -45,7 +44,7 @@ class Frogsystem2 extends WebApp {
         try {
             // TODO: Pre-Startup Hook
             $FD->startup();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // DB Connection failed
             $this->fail($e);
         }

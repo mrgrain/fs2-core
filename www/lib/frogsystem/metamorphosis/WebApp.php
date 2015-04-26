@@ -1,13 +1,15 @@
 <?php
-namespace frogsystem\metamorphosis;
+namespace Frogsystem\Metamorphosis;
 
-use frogsystem\spawn\App;
+use Frogsystem\Spawn\App;
 
 class WebApp extends App {
     // session
-    // requests
     // router
     // header
+    // Database
+    // Notifications
+    // user/auth
 
     // plugin aware container
 }
