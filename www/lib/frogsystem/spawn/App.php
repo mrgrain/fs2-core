@@ -3,8 +3,9 @@ namespace Frogsystem\Spawn;
 
 use Frogsystem\Spawn\Contract\Extendible;
 use Frogsystem\Spawn\Contract\Pluggable;
+use Frogsystem\Spawn\Contract\Runnable;
 
-class App extends Container implements Extendible
+class App extends Container implements Extendible, Runnable
 {
     // requests
     // middleware
