@@ -110,11 +110,11 @@ class Container implements ContainerInterface, \ArrayAccess
      * @param array $args
      * @return mixed
      * @throws Exception\ContainerException
-     * @internal param $id
-     * @internal param array $arguments
      */
     public function make($class, array $args = [])
     {
+        //todo interfaces! $app->make('App\Contract\Spam')
+
         // get reflection and parameters
         $reflection = new \ReflectionClass($class);
         $constructor = $reflection->getConstructor();
@@ -159,8 +159,8 @@ class Container implements ContainerInterface, \ArrayAccess
         foreach ($parameters as $param) {
             // DI
             $class = $param->getClass()->name;
-            if ($this->$delegate->has($class)) {
-                $arguments[] = $this->$delegate->get($class);
+            if ($this->delegate->has($class)) {
+                $arguments[] = $this->delegate->get($class);
                 continue;
             }
 
