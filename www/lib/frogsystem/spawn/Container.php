@@ -45,15 +45,34 @@ class Container implements ContainerInterface, \ArrayAccess
         $this->delegate = $container;
     }
 
+    /**
+     * Sets the entry.
+     * @param $id
+     * @param $value
+     */
+    public function set($id, $value)
+    {
+        $this->container[$id] = $value;
+    }
+
+    /**
+     * Shorthand to invoke the callable just once (when needed). Save to result to the container.
+     * @param $id
+     * @param $value
+     */
+    public function defer($id, $value)
+    {
+        $this->set($id, function() use ($id, $value) {
+            $this->set($id, $value());
+            return $this->get($id);
+        });
+    }
 
     /**
      * Returns an entry by its identifier.
-     *
      * @throws NotFoundException  No entry was found for this identifier.
      * @throws ContainerException Error while retrieving the entry.
-     *
      * @param string $id Identifier of the entry.
-     *
      * @return mixed The entry.
      */
     public function get($id) {
@@ -73,19 +92,17 @@ class Container implements ContainerInterface, \ArrayAccess
         throw new Exception\NotFoundException();
     }
 
+
     /**
      * Returns true if an entry with that identifier exists.
      * False otherwise.
-     *
      * @param string $id Identifier of the entry.
-     *
      * @return boolean
      */
     public function has($id)
     {
         return isset($this->container[$id]);
     }
-
 
     /**
      * Make a new instance of an object with DI.
@@ -101,13 +118,47 @@ class Container implements ContainerInterface, \ArrayAccess
         // get reflection and parameters
         $reflection = new \ReflectionClass($class);
         $constructor = $reflection->getConstructor();
-        $parameters = $constructor->getParameters();
 
-        // Build argument list from reflected parameters
+        // Return new instance
+        $arguments = $this->inject($constructor, $args);
+        return $reflection->newInstanceArgs($arguments);
+    }
+
+    /**
+     * Invoke the given Closure with DI.
+     * @param callable $closure
+     * @param array $args
+     * @return mixed
+     * @throws Exception\ContainerException
+     */
+    public function invoke(\Closure $closure, array $args = [])
+    {
+        // get reflection
+        $function = &$closure;
+        $reflection = new \ReflectionFunction($function);
+
+        // Return new instance
+        $arguments = $this->inject($reflection, $args);
+        return $reflection->invokeArgs($arguments);
+    }
+
+    /**
+     * Performs the actual injection of dependencies from a reflection
+     * @param \ReflectionFunctionAbstract $reflection
+     * @param array $args
+     * @return array The list of reflected arguments.
+     * @throws Exception\ContainerException
+     */
+    protected function inject(\ReflectionFunctionAbstract $reflection, array $args = [])
+    {
+        // get parameters
+        $parameters = $reflection->getParameters();
+
+        // Build argument list
         $arguments = [];
-        foreach ($parameters as $parameter) {
+        foreach ($parameters as $param) {
             // DI
-            $class = $parameter->getClass()->name;
+            $class = $param->getClass()->name;
             if ($this->$delegate->has($class)) {
                 $arguments[] = $this->$delegate->get($class);
                 continue;
@@ -119,55 +170,24 @@ class Container implements ContainerInterface, \ArrayAccess
                 continue;
             }
 
-            // from list
+            // from argument list
             if (!empty($args)) {
                 $arguments[] = array_shift($args);
                 continue;
             }
 
-            throw new Exception\ContainerException();
-        }
-
-        // Return new instance
-        return $reflection->newInstanceArgs($arguments);
-    }
-
-    /**
-     * @param callable $closure
-     * @param array $args
-     * @return mixed
-     * @throws Exception\ContainerException
-     */
-    public function invoke(\Closure $closure, array $args = [])
-    {
-        // get reflection and parameters
-        $function = &$closure;
-        $reflection = new \ReflectionFunction($function);
-        $parameters = $reflection->getParameters();
-
-        // Build argument list from reflected parameters
-        $arguments = [];
-        foreach ($parameters as $parameter) {
-            // DI
-            $class = $parameter->getClass()->name;
-            try {
-                $arguments[] = $this->make($class);
+            // optional parameter
+            if ($param->isOptional()) {
+                $arguments[] =  $param->getDefaultValue();
                 continue;
-            } catch (Exception\ContainerException $e) {
-                // from list
-                if (!empty($args)) {
-                    $arguments[] = array_shift($args);
-                    continue;
-                }
             }
 
+            // Couldn't resolve the dependency
             throw new Exception\ContainerException();
         }
 
-        // Return new instance
-        return $reflection->invokeArgs($arguments);
+        return $arguments;
     }
-
 
     /**
      * Protect a value from being executed as callable on retrieving.
@@ -182,23 +202,15 @@ class Container implements ContainerInterface, \ArrayAccess
     }
 
     /**
-     * Protect a value from being executed as callable on retrieving.
-     * @param $value
+     * Shorthand for a factory.
+     * @param string $value
      * @return callable
      */
-    public function once($value)
+    public function factory($value)
     {
-        return false;
-    }
-
-    /**
-     * Protect a value from being executed as callable on retrieving.
-     * @param $value
-     * @return callable
-     */
-    public function implement($value)
-    {
-        return false;
+        return function () use ($value) {
+            return $this->make($value);
+        };
     }
 
 
@@ -209,7 +221,7 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function __set($id, $value)
     {
-        $this[$id] = $value;
+        $this->set($id, $value);
     }
 
     /**
@@ -247,7 +259,7 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        $this->container[$offset] = $value;
+        $this->set($offset, $value);
     }
 
     /**
