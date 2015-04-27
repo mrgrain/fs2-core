@@ -1,6 +1,7 @@
 <?php
 namespace Frogsystem\Spawn;
 
+use Frogsystem\Frogsystem\Frogsystem2;
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
 use Interop\Container\Exception\NotFoundException;
@@ -35,6 +36,9 @@ class Container implements ContainerInterface, \ArrayAccess
         if ($container) {
             $this->delegate = $container;
         }
+        $this->set('Interop\Container\ContainerInterface', $this);
+        $this->set('Frogsystem\Spawn\Container', $this);
+        $this->set(get_called_class(), $this);
     }
 
     /**
@@ -60,11 +64,11 @@ class Container implements ContainerInterface, \ArrayAccess
      * @param $id
      * @param $value
      */
-    public function defer($id, $value)
+    public function once($id, $value)
     {
-        $this->set($id, function() use ($id, $value) {
-            $this->set($id, $value());
-            return $this->get($id);
+        $this->set($id, function(Container $app) use ($id, $value) {
+            $app->set($id, $value());
+            return $app->get($id);
         });
     }
 
@@ -158,15 +162,15 @@ class Container implements ContainerInterface, \ArrayAccess
         $arguments = [];
         foreach ($parameters as $param) {
             // DI
-            $class = $param->getClass()->name;
-            if ($this->delegate->has($class)) {
-                $arguments[] = $this->delegate->get($class);
+            $class = $param->getClass();
+            if ($class && $this->delegate->has($class->name)) {
+                $arguments[] = $this->delegate->get($class->name);
                 continue;
             }
 
             // class exists
-            if (class_exists($class)) {
-                $arguments[] = $this->make($class);
+            if ($class && class_exists($class->name)) {
+                $arguments[] = $this->make($class->name);
                 continue;
             }
 

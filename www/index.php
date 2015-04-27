@@ -7,14 +7,4 @@ namespace Frogsystem\Frogsystem;
 
 // Deploy page
 require_once(FS2SOURCE . '/lib/vendor/autoload.php');
-$fs2 = new Frogsystem2();
-$fs2->run();
-
-// config
-// autoload
-// $fs2 = new Frogsystem2();
-// $fs2->run();
-
-
-
-// admin/index.php: require(basedir(__DIR__) . '/index.php');
+(new Frogsystem2)->run();

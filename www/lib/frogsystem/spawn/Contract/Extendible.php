@@ -11,5 +11,11 @@ interface Extendible {
      * @param Pluggable $pluggable
      * @return mixed
      */
-    public function extend(Pluggable $pluggable);
+    public function plug(Pluggable $pluggable);
+
+    /**
+     * @param Pluggable $pluggable
+     * @return mixed
+     */
+    public function unplug(Pluggable $pluggable);
 }

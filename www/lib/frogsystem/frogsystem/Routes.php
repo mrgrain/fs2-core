@@ -17,7 +17,7 @@ class Routes extends WebApp implements PluggableContainer, Runnable {
      * Executed whenever a pluggable gets plugged in.
      * @return mixed
      */
-    public function plug()
+    public function plugged()
     {
         // Route Urls
         $this->router->admin(function() {
@@ -138,6 +138,6 @@ class Routes extends WebApp implements PluggableContainer, Runnable {
      * Executed whenever a pluggable gets unplugged.
      * @return mixed
      */
-    public function unplug() {
+    public function unplugged() {
     }
 }

@@ -1,77 +1,16 @@
 <?php
-/**
- * @file     class_global_data.php
- * @folder   /libs/
- * @version  0.4
- * @author   Sweil
- *
- * this class provides access to the frogsystem 2 global data
- * including global config, page informations, applet data, etc..
- */
+namespace Frogsystem\Frogsystem;
 
-class GlobalData {
+class LegacyConfig {
 
-    // Properties
-    private $db = null;             // Database connection
-    private $text = array();        // Text objects
-    private $config = array();      // config data
+    protected $app;
+    private $config = [];
 
-    // Constructor
-    //
-    public function __construct() {
-        // get env cfg
+    function __construct(Frogsystem2 $app)
+    {
+        $this->app = $app;
         require_once(FS2SOURCE.'/libs/config/ConfigEnv.php');
-        $this->config['env'] = new ConfigEnv();
-    }
-
-    // Destructor closes DB-Connection
-    public function __destruct (){
-        $this->closeConnection();
-    }
-    
-
-    // connect to Database
-    public function connect() {
-        $this->db = new sql($this->env('DB_HOST'), $this->env('DB_NAME'), $this->env('DB_USER'), $this->env('DB_PASSWORD'), $this->env('DB_PREFIX'));
-        return $this->db;
-    }
-    // get db Database connection
-    public function db() {
-        return $this->db;
-    }
-    public function sql() {
-        trigger_error('Use of $FD->sql is deprecated. Please use $FD->db.', E_USER_DEPRECATED);
-        return $this->db();
-    }
-    // Destruct Database Connection => Close Connection
-    private function closeConnection() {
-        $this->db->__destruct();
-        return $this;
-    }
-    
-    
-    // startup the system
-    public function startup() {
-        // connect to db
-        try {
-            $this->connect();
-        } catch (Excpetion $e) {
-            throw $e;
-        }
-        
-        // set config data
-        $this->loadConfigsByHook('startup');
-
-        //get Text object
-        $this->text = array(
-            'frontend'  => new lang ($this->config('language_text'), 'frontend'),
-            'admin'     => new lang ($this->config('language_text'), 'admin'),
-            'template'  => new lang ($this->config('language_text'), 'template'),
-            'menu'      => new lang ($this->config('language_text'), 'menu'),
-            'fscode'    => new lang ($this->config('language_text'), 'fscode'),
-        );
-        
-        return $this;
+        $this->config['env'] = new \ConfigEnv();
     }
 
 
@@ -89,7 +28,7 @@ class GlobalData {
         if (empty($data)) {
             $this->config[$name] = $this->getConfigObjectFromDatabase($name);
 
-        // set data from input
+            // set data from input
         } else {
             $this->config[$name] = $this->createConfigObject($name, $data, $json);
         }
@@ -102,11 +41,11 @@ class GlobalData {
         require_once(FS2SOURCE . '/libs/class_ConfigData.php');
 
         // Load configs from DB
-        $data = $this->db->conn()->prepare(
-                        'SELECT * FROM '.$this->db->getPrefix().'config
+        $data = $this->app->db->conn()->prepare(
+            'SELECT * FROM '.$this->app->db->getPrefix().'config
                          WHERE `config_loadhook` = ?');
         $data->execute(array($hook));
-        $data = $data->fetchAll(PDO::FETCH_ASSOC);
+        $data = $data->fetchAll(\PDO::FETCH_ASSOC);
         foreach ($data as $config) {
             // Load corresponding class and get config array
             if ($reload || !$this->configExists($config['config_name']))
@@ -128,11 +67,11 @@ class GlobalData {
     // create config object from db
     private function getConfigObjectFromDatabase($name) {
         // Load config from DB
-        $config = $this->db->conn()->prepare(
-                         'SELECT * FROM '.$this->db->getPrefix().'config
+        $config = $this->app->db->conn()->prepare(
+            'SELECT * FROM '.$this->app->db->getPrefix().'config
                           WHERE `config_name` = ? LIMIT 1');
         $config->execute(array($name));
-        $config = $config->fetch(PDO::FETCH_ASSOC);
+        $config = $config->fetch(\PDO::FETCH_ASSOC);
 
         // Load corresponding class and get config array
         return $this->createConfigObject($config['config_name'], $config['config_data'], true);
@@ -151,11 +90,11 @@ class GlobalData {
         if (func_num_args() == 2) {
             $this->config['main']->setConfig(func_get_arg(0), func_get_arg(1));
 
-        // return other configs
+            // return other configs
         } elseif (func_num_args() == 3) {
             $this->config[func_get_arg(0)]->setConfig(func_get_arg(1), func_get_arg(2));
 
-        // error
+            // error
         } else {
             Throw Exception('Invalid Call of method "setConfig"');
         }
@@ -165,7 +104,7 @@ class GlobalData {
     public function saveConfig($name, $newdata) {
         try {
             //get original data from db
-            $original_data = $this->db->getField('config', 'config_data', array('W' => "`config_name` = '".$name."'"));
+            $original_data = $this->app->db->getField('config', 'config_data', array('W' => "`config_name` = '".$name."'"));
             if (!empty($original_data))
                 $original_data = json_array_decode($original_data);
             else {
@@ -185,7 +124,7 @@ class GlobalData {
             );
 
             // save to db
-            $this->db->save('config', $newdata, 'config_name', false);
+            $this->app->db->save('config', $newdata, 'config_name', false);
 
             // Reload Data
             $this->reloadConfig($name, $newdata['config_data'], true);
@@ -202,11 +141,11 @@ class GlobalData {
         if (func_num_args() == 1) {
             return $this->config['main']->get(func_get_arg(0));
 
-        // return other configs
+            // return other configs
         } elseif (func_num_args() == 2) {
             return $this->config[func_get_arg(0)]->get(func_get_arg(1));
 
-        // error
+            // error
         } else {
             Throw Exception('Invalid Call of method "config"');
         }
@@ -233,27 +172,9 @@ class GlobalData {
         if (func_num_args() == 1) {
             return isset($this->config[func_get_arg(0)]);
 
-        // check for config-key
+            // check for config-key
         } else {
             return isset($this->config[func_get_arg(0)]) && $this->config[func_get_arg(0)]->exists(func_get_arg(1));
         }
     }
-
-
-
-    // get lang phrase object
-    public function text($type, $tag) {
-        if (isset($this->text[$type]))
-            return $this->text[$type]->get($tag);
-
-        return null;
-    }
-
-    // get lang phrase object
-    public function setPageText($obj) {
-        return $this->text['page'] = $obj;
-    }
-
 }
-
-?>

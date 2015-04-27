@@ -53,7 +53,7 @@ class LegacyRouter {
         global $FD;
 
         // Run AdminCP Hack
-        if (isset($admin) || isset($_GET['admin'])) {
+        if (isset($_GET['admin'])) {
             $route = $this->admin;
             return $route();
         }

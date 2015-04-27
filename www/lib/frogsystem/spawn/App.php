@@ -18,9 +18,18 @@ class App extends Container implements Extendible, Runnable
      * @param Pluggable $pluggable
      * @return mixed
      */
-    public function extend(Pluggable $pluggable)
+    public function plug(Pluggable $pluggable)
     {
-        $pluggable->plug();
+        $pluggable->plugged();
+    }
+
+    /**
+     * @param Pluggable $pluggable
+     * @return mixed
+     */
+    public function unplug(Pluggable $pluggable)
+    {
+        $pluggable->unplugged();
     }
 
 

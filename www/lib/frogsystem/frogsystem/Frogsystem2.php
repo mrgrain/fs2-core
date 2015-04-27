@@ -1,9 +1,8 @@
 <?php
 namespace Frogsystem\Frogsystem;
 
-use Frogsystem\Metamorphosis\WebApp;
 
-class Frogsystem2 extends WebApp {
+class Frogsystem2 extends GlobalData {
 
     public function __construct()
     {
@@ -32,23 +31,31 @@ class Frogsystem2 extends WebApp {
         ]);
 
         // Defaults
+        //todo shorthands for aliasing
         $this->session = $this->make('Frogsystem\\Frogsystem\\LegacySession');
         $this->router = $this->make('Frogsystem\\Frogsystem\\LegacyRouter');
         $this['Frogsystem\\Frogsystem\\LegacyRouter'] = $this->router;
-        //todo shorthands for aliasing
+        $this->config = $this->make('Frogsystem\\Frogsystem\\LegacyConfig', [$this]);
+        $this['Frogsystem\\Frogsystem\\LegacyConfig'] = $this->config;
+        $this->once('text', function() {
+            return $this->make('Frogsystem\\Frogsystem\\LegacyText');
+        });
 
         // Modules
-        $this->extend($this->make('Frogsystem\\Frogsystem\\Routes'));
+        $this->plug($this->make('Frogsystem\\Frogsystem\\Routes'));
+
+        // make myself global
+        global $FD;
+        $FD = $this;
     }
 
     public function run()
     {
-        // init global data object
-        global $FD; // todo: incorporate GlobalData interface
-        $FD = new \GlobalData(); // set self to FD as temporary thing
         try {
             // TODO: Pre-Startup Hook
-            $FD->startup();
+            $this->connect();
+            $this->config->loadConfigsByHook('startup');
+
         } catch (\Exception $e) {
             // DB Connection failed
             $this->fail($e); // todo: somwhere else
@@ -68,6 +75,11 @@ class Frogsystem2 extends WebApp {
     public function __destruct()
     {
         // TODO: "Shutdown Hook"
+
+        // container destructs
+        $this->db->__destruct();
+
+        // legacy destroy global
         global $FD;
         unset($FD);
     }
@@ -77,6 +89,7 @@ class Frogsystem2 extends WebApp {
         // Content Constants
         @define('FS2SOURCE',  basename(basename(basename(__DIR__)))); //Todo: add root
         @define('FS2CONTENT', FS2SOURCE);
+        @define('FS2ADMIN', FS2SOURCE.'/admin');
         @define('FS2CONFIG', FS2SOURCE.'/config');
         @define('FS2LANG', FS2SOURCE.'/lang');
         @define('FS2APPLETS', FS2CONTENT.'/applets');
