@@ -1,5 +1,5 @@
 <?php
-namespace Frogsystem\Spawn\Contract;
+namespace Frogsystem\Spawn\Contracts;
 
 /**
  * Interface Runnable

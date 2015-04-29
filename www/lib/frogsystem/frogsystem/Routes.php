@@ -1,12 +1,11 @@
 <?php
 namespace Frogsystem\Frogsystem;
 
+use Frogsystem\Spawn\Contracts\PluggableContainer;
+use Frogsystem\Spawn\Container;
 
-use Frogsystem\Metamorphosis\WebApp;
-use Frogsystem\Spawn\Contract\PluggableContainer;
-use Frogsystem\Spawn\Contract\Runnable;
-
-class Routes extends WebApp implements PluggableContainer, Runnable {
+class Routes extends Container implements PluggableContainer
+{
 
     function __construct(LegacyRouter $router)
     {
@@ -17,7 +16,7 @@ class Routes extends WebApp implements PluggableContainer, Runnable {
      * Executed whenever a pluggable gets plugged in.
      * @return mixed
      */
-    public function plugged()
+    public function plugin()
     {
         // Route Urls
         $this->router->admin(function() {
@@ -126,18 +125,12 @@ class Routes extends WebApp implements PluggableContainer, Runnable {
         });
     }
 
-    /**
-     *
-     */
-    public function run()
-    {
-
-    }
 
     /**
      * Executed whenever a pluggable gets unplugged.
      * @return mixed
      */
-    public function unplugged() {
+    public function unplug()
+    {
     }
 }

@@ -42,7 +42,7 @@ class Frogsystem2 extends GlobalData {
         });
 
         // Modules
-        $this->plug($this->make('Frogsystem\\Frogsystem\\Routes'));
+        $this->connect('Frogsystem\\Frogsystem\\Routes');
 
         // make myself global
         global $FD;
@@ -53,7 +53,7 @@ class Frogsystem2 extends GlobalData {
     {
         try {
             // TODO: Pre-Startup Hook
-            $this->connect();
+            $this->db_connect();
             $this->config->loadConfigsByHook('startup');
 
         } catch (\Exception $e) {

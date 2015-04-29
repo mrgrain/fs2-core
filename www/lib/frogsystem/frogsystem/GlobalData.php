@@ -19,7 +19,8 @@ abstract class GlobalData extends WebApp {
     }
 
     // database interface
-    public function connect() {
+    protected function db_connect()
+    {
         $this->db = new \sql($this->env('DB_HOST'), $this->env('DB_NAME'), $this->env('DB_USER'), $this->env('DB_PASSWORD'), $this->env('DB_PREFIX'));
         return $this->db;
     }

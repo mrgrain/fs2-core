@@ -1,9 +1,10 @@
 <?php
 namespace Frogsystem\Metamorphosis;
 
-use Frogsystem\Spawn\App;
+use Frogsystem\Spawn\Application;
 
-class WebApp extends App {
+class WebApp extends Application
+{
     // session
     // router
     // header
@@ -12,4 +13,11 @@ class WebApp extends App {
     // user/auth
 
     // plugin aware container
+    /**
+     * @return mixed
+     */
+    public function run()
+    {
+        // TODO: Implement run() method.
+    }
 }

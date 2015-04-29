@@ -1,16 +1,13 @@
 <?php
 namespace Frogsystem\Spawn;
 
-use Frogsystem\Frogsystem\Frogsystem2;
 use Interop\Container\ContainerInterface;
-use Interop\Container\Exception\ContainerException;
-use Interop\Container\Exception\NotFoundException;
 
 /**
  * Class Container
  * @package frogsystem\spawn
  */
-class Container implements ContainerInterface, \ArrayAccess
+class Container implements Contracts\Container, \ArrayAccess
 {
 
     /**
@@ -73,9 +70,33 @@ class Container implements ContainerInterface, \ArrayAccess
     }
 
     /**
+     * Shorthand for a factory.
+     * @param string $value
+     * @return callable
+     */
+    public function factory($value)
+    {
+        return function () use ($value) {
+            return $this->make($value);
+        };
+    }
+
+    /**
+     * Protect a value from being executed as callable on retrieving.
+     * @param $value
+     * @return callable
+     */
+    public function protect($value)
+    {
+        return function () use ($value) {
+            return $value;
+        };
+    }
+
+    /**
      * Returns an entry by its identifier.
-     * @throws NotFoundException  No entry was found for this identifier.
-     * @throws ContainerException Error while retrieving the entry.
+     * @throws Exceptions\NotFoundException  No entry was found for this identifier.
+     * @throws Exceptions\ContainerException Error while retrieving the entry.
      * @param string $id Identifier of the entry.
      * @return mixed The entry.
      */
@@ -93,9 +114,8 @@ class Container implements ContainerInterface, \ArrayAccess
             return $this->container[$id];
         }
 
-        throw new Exception\NotFoundException();
+        throw new Exceptions\NotFoundException();
     }
-
 
     /**
      * Returns true if an entry with that identifier exists.
@@ -105,7 +125,7 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function has($id)
     {
-        return isset($this->container[$id]);
+        return is_string($id) && isset($this->container[$id]);
     }
 
     /**
@@ -113,7 +133,7 @@ class Container implements ContainerInterface, \ArrayAccess
      * @param string $class
      * @param array $args
      * @return mixed
-     * @throws Exception\ContainerException
+     * @throws Exceptions\ContainerException
      */
     public function make($class, array $args = [])
     {
@@ -133,10 +153,12 @@ class Container implements ContainerInterface, \ArrayAccess
      * @param callable $closure
      * @param array $args
      * @return mixed
-     * @throws Exception\ContainerException
+     * @throws Exceptions\ContainerException
      */
     public function invoke(\Closure $closure, array $args = [])
     {
+        // todo class methods
+
         // get reflection
         $function = &$closure;
         $reflection = new \ReflectionFunction($function);
@@ -151,7 +173,7 @@ class Container implements ContainerInterface, \ArrayAccess
      * @param \ReflectionFunctionAbstract $reflection
      * @param array $args
      * @return array The list of reflected arguments.
-     * @throws Exception\ContainerException
+     * @throws Exceptions\ContainerException
      */
     protected function inject(\ReflectionFunctionAbstract $reflection, array $args = [])
     {
@@ -187,34 +209,10 @@ class Container implements ContainerInterface, \ArrayAccess
             }
 
             // Couldn't resolve the dependency
-            throw new Exception\ContainerException();
+            throw new Exceptions\ContainerException();
         }
 
         return $arguments;
-    }
-
-    /**
-     * Protect a value from being executed as callable on retrieving.
-     * @param $value
-     * @return callable
-     */
-    public function protect($value)
-    {
-        return function () use ($value) {
-            return $value;
-        };
-    }
-
-    /**
-     * Shorthand for a factory.
-     * @param string $value
-     * @return callable
-     */
-    public function factory($value)
-    {
-        return function () use ($value) {
-            return $this->make($value);
-        };
     }
 
 

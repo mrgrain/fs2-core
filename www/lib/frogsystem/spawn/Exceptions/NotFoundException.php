@@ -1,5 +1,5 @@
 <?php
-namespace Frogsystem\Spawn\Exception;
+namespace Frogsystem\Spawn\Exceptions;
 
 use Interop\Container\Exception\NotFoundException as NotFoundExceptionInterface;
 

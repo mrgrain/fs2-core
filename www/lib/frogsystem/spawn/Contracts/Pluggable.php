@@ -1,5 +1,5 @@
 <?php
-namespace Frogsystem\Spawn\Contract;
+namespace Frogsystem\Spawn\Contracts;
 
 interface Pluggable
 {
@@ -8,11 +8,11 @@ interface Pluggable
      * Executed whenever a pluggable gets plugged in.
      * @return mixed
      */
-    public function plugged();
+    public function plugin();
 
     /**
      * Executed whenever a pluggable gets unplugged.
      * @return mixed
      */
-    public function unplugged();
+    public function unplug();
 }
