@@ -7,9 +7,10 @@ use Frogsystem\Spawn\Container;
 class Routes extends Container implements PluggableContainer
 {
 
-    function __construct(LegacyRouter $router)
+    function __construct(LegacyRouter $router, LegacyConfig $config)
     {
         $this->router = $router;
+        $this->config = $config;
     }
 
     /**
@@ -23,16 +24,15 @@ class Routes extends Container implements PluggableContainer
             include(FS2ADMIN.'/admin.php');
         });
         $this->router->all('/', function() {
-            global $FD;
 
             // Constructor Calls
             global $APP;
             userlogin();
-            setTimezone($FD->cfg('timezone'));
+            setTimezone($this->config->cfg('timezone'));
             run_cronjobs();
-            count_all($FD->cfg('goto'));
+            count_all($this->config->cfg('goto'));
             save_visitors();
-            if (!$FD->configExists('main', 'count_referers') || $FD->cfg('main', 'count_referers')==1) {
+            if (!$this->config->configExists('main', 'count_referers') || $this->config->cfg('main', 'count_referers') == 1) {
                 save_referer();
             }
             set_style();
@@ -42,7 +42,7 @@ class Routes extends Container implements PluggableContainer
             $theTemplate = new \template(); //todo: abstract templates in a simple way for now
             $theTemplate->setFile('0_main.tpl');
             $theTemplate->load('MAIN');
-            $theTemplate->tag('content', get_content($FD->cfg('goto')));
+            $theTemplate->tag('content', get_content($this->config->cfg('goto')));
             $theTemplate->tag('copyright', get_copyright());
 
             $template_general = (string) $theTemplate;

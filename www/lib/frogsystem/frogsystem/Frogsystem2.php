@@ -2,6 +2,13 @@
 namespace Frogsystem\Frogsystem;
 
 
+/**
+ * @property LegacyConfig config
+ * @property LegacyRouter router
+ * @property LegacySession session
+ * @property LegacyText text
+ * @property \sql db
+ */
 class Frogsystem2 extends GlobalData {
 
     public function __construct()
@@ -33,10 +40,10 @@ class Frogsystem2 extends GlobalData {
         // Defaults
         //todo shorthands for aliasing
         $this->session = $this->make('Frogsystem\\Frogsystem\\LegacySession');
-        $this->router = $this->make('Frogsystem\\Frogsystem\\LegacyRouter');
-        $this['Frogsystem\\Frogsystem\\LegacyRouter'] = $this->router;
         $this->config = $this->make('Frogsystem\\Frogsystem\\LegacyConfig', [$this]);
         $this['Frogsystem\\Frogsystem\\LegacyConfig'] = $this->config;
+        $this->router = $this->make('Frogsystem\\Frogsystem\\LegacyRouter');
+        $this['Frogsystem\\Frogsystem\\LegacyRouter'] = $this->router;
         $this->once('text', function() {
             return $this->make('Frogsystem\\Frogsystem\\LegacyText');
         });
@@ -53,7 +60,15 @@ class Frogsystem2 extends GlobalData {
     {
         try {
             // TODO: Pre-Startup Hook
-            $this->db_connect();
+            $this->db = new \sql(
+                $this->config->env('DB_HOST'),
+                $this->config->env('DB_NAME'),
+                $this->config->env('DB_USER'),
+                $this->config->env('DB_PASSWORD'),
+                $this->env('DB_PREFIX')
+            );
+            $this->set('sql', $this->db);
+
             $this->config->loadConfigsByHook('startup');
 
         } catch (\Exception $e) {
@@ -62,7 +77,7 @@ class Frogsystem2 extends GlobalData {
         }
 
         // route urls
-        $this->router->route();
+        $this->invoke([$this->router, 'route']);
 
         // Shutdown System
         $this->__destruct();

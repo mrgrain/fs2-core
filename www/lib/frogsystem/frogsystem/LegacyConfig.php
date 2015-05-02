@@ -4,6 +4,7 @@ namespace Frogsystem\Frogsystem;
 class LegacyConfig {
 
     protected $app;
+    protected $db;
     private $config = [];
 
     function __construct(Frogsystem2 $app)
@@ -129,7 +130,7 @@ class LegacyConfig {
             // Reload Data
             $this->reloadConfig($name, $newdata['config_data'], true);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }

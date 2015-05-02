@@ -6,10 +6,12 @@ class LegacyRouter {
     protected $routes = [];
     protected $admin;
     protected $fail;
+    protected $config;
 
     // Routing
-    function __construct()
+    function __construct(LegacyConfig $config)
     {
+        $this->config = $config;
         $this->fail = function () {};
     }
 
@@ -48,10 +50,8 @@ class LegacyRouter {
         return $route($e);
     }
 
-    public function route()
+    public function route(\sql $db)
     {
-        global $FD;
-
         // Run AdminCP Hack
         if (isset($_GET['admin'])) {
             $route = $this->admin;
@@ -59,21 +59,21 @@ class LegacyRouter {
         }
 
         //check seo
-        if ($FD->cfg('url_style') == 'seo') {
+        if ($this->config->cfg('url_style') == 'seo') {
             get_seo();
         }
 
         // Check $_GET['go']
-        $FD->setConfig('env', 'get_go_raw', isset($_GET['go'])?$_GET['go']:null);
-        $goto = empty($_GET['go']) ? $FD->cfg('home_real') : $_GET['go'];
-        $FD->setConfig('env', 'get_go', $goto);
+        $this->config->setConfig('env', 'get_go_raw', isset($_GET['go']) ? $_GET['go'] : null);
+        $goto = empty($_GET['go']) ? $this->config->cfg('home_real') : $_GET['go'];
+        $this->config->setConfig('env', 'get_go', $goto);
 
         // Forward Aliases
-        $goto = $this->forward_aliases($goto);
+        $goto = $this->forward_aliases($db, $goto);
 
         // write $goto into $global_config_arr['goto']
-        $FD->setConfig('goto', $goto);
-        $FD->setConfig('env', 'goto', $goto);
+        $this->config->setConfig('goto', $goto);
+        $this->config->setConfig('env', 'goto', $goto);
 
         return $this->matchRoute('/'.$goto);
     }
@@ -96,12 +96,10 @@ class LegacyRouter {
     }
 
 
-    protected function forward_aliases ( $GOTO )
+    protected function forward_aliases(\sql $db, $GOTO)
     {
-        global $FD;
-
-        $aliases = $FD->db()->conn()->prepare(
-            'SELECT alias_go, alias_forward_to FROM '.$FD->env('DB_PREFIX').'aliases
+        $aliases = $db->conn()->prepare(
+            'SELECT alias_go, alias_forward_to FROM ' . $this->config->env('DB_PREFIX') . 'aliases
                           WHERE `alias_active` = 1 AND `alias_go` = ?');
         $aliases->execute(array($GOTO));
         $aliases = $aliases->fetchAll(\PDO::FETCH_ASSOC);
@@ -114,5 +112,4 @@ class LegacyRouter {
 
         return $GOTO;
     }
-
 }

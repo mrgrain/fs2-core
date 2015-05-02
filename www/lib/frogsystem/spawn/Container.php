@@ -150,20 +150,24 @@ class Container implements Contracts\Container, \ArrayAccess
 
     /**
      * Invoke the given Closure with DI.
-     * @param callable $closure
+     * @param callable $callable
      * @param array $args
      * @return mixed
      * @throws Exceptions\ContainerException
      */
-    public function invoke(\Closure $closure, array $args = [])
+    public function invoke(Callable $callable, array $args = [])
     {
-        // todo class methods
+        // object/class method
+        // todo:: check for string ::
+        if (is_array($callable) && 2 <= count($callable)) {
+            $reflection = new \ReflectionMethod($callable[0], $callable[1]);
+            $arguments = $this->inject($reflection, $args);
+            return $reflection->invokeArgs($callable[0], $arguments);
+        }
 
-        // get reflection
-        $function = &$closure;
+        // closure, function and other callables
+        $function = &$callable;
         $reflection = new \ReflectionFunction($function);
-
-        // Return new instance
         $arguments = $this->inject($reflection, $args);
         return $reflection->invokeArgs($arguments);
     }
