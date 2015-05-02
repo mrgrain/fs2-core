@@ -1,7 +1,7 @@
 <?php
 
 // inlcude functions
-require_once(FS2SOURCE . '/libs/functions-admin.php');
+require_once('functions-admin.php');
 
 ######################
 ### ASSETS ###########
@@ -272,7 +272,7 @@ if (POPUP !== true) {
     <div id="content_container">';
 
     ob_start();
-    require(FS2ADMIN . '/' . $PAGE_DATA_ARR['file']);
+    require(__DIR__ . '/' . $PAGE_DATA_ARR['file']);
     $content = ob_get_clean();
 
     $top = '<h2 class="cb-text">(' . $PAGE_DATA_ARR['title'] . ')</h2>';

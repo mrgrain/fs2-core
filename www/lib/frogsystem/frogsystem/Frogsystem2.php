@@ -109,7 +109,7 @@ class Frogsystem2 extends WebApp
         // Content Constants
         @define('FS2SOURCE',  basename(basename(basename(__DIR__)))); //Todo: add root
         @define('FS2CONTENT', FS2SOURCE);
-        @define('FS2ADMIN', FS2SOURCE.'/admin');
+        @define('FS2ADMIN', FS2SOURCE.'/lib/frogsystem/fs2core/src/admin');
         @define('FS2CONFIG', FS2SOURCE.'/config');
         @define('FS2LANG', FS2SOURCE.'/lang');
         @define('FS2APPLETS', FS2SOURCE . '/lib/frogsystem/fs2core/src/applets');
