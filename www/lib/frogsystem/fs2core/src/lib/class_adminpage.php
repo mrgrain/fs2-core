@@ -26,7 +26,7 @@ class adminpage
         $this->name = substr($pagefile, 0, -4);
 
         // load tpl file
-        $path = FS2SOURCE . '/admin/templates/' . $this->name . '.tpl';
+        $path = FS2ADMIN . '/templates/' . $this->name . '.tpl';
 
         if (is_readable($path)) {
             $this->loadTpl(file_get_contents($path));
@@ -126,7 +126,7 @@ class adminpage
                 $tmpval = preg_replace("#<!--TEXT::[^-]+-->#is", "", $tmpval);
 
         } else {
-            throw new ErrorException("Template '$tplname' does not exist!");
+            throw new \ErrorException("Template '$tplname' does not exist!");
         }
 
         $this->clearConds();
