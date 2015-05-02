@@ -1,6 +1,6 @@
 <?php
 namespace Frogsystem\Frogsystem;
-
+use Frogsystem\Metamorphosis\WebApp;
 
 /**
  * @property LegacyConfig config
@@ -9,11 +9,15 @@ namespace Frogsystem\Frogsystem;
  * @property LegacyText text
  * @property \sql db
  */
-class Frogsystem2 extends GlobalData {
+class Frogsystem2 extends WebApp
+{
 
     public function __construct()
     {
         parent::__construct();
+
+        require_once(__DIR__ . '/functions.php');
+
         // todo populate a container and set as delegate
         // todo set this as default implementation for App
 
@@ -30,46 +34,47 @@ class Frogsystem2 extends GlobalData {
         // Debugging aka environment
         $this->setDebugMode(FS2_DEBUG);
 
-        // Legacy autoloading/including
-        set_include_path(FS2SOURCE);
-        require_once(__DIR__ . '/legacy/functions.php');
-        $this->registerAutoload([
-            array($this, 'legacyLoader')
-        ]);
-
         // Defaults
+        // env
+        // router
+        // db
+        // config
+        // modules
+
         //todo shorthands for aliasing
         $this->session = $this->make('Frogsystem\\Frogsystem\\LegacySession');
         $this->config = $this->make('Frogsystem\\Frogsystem\\LegacyConfig', [$this]);
         $this['Frogsystem\\Frogsystem\\LegacyConfig'] = $this->config;
-        $this->router = $this->make('Frogsystem\\Frogsystem\\LegacyRouter');
-        $this['Frogsystem\\Frogsystem\\LegacyRouter'] = $this->router;
+        $this->router = $this->make('Frogsystem\\Frogsystem\\Router');
+        $this['Frogsystem\\Frogsystem\\Router'] = $this->router;
         $this->once('text', function() {
-            return $this->make('Frogsystem\\Frogsystem\\LegacyText');
+            $args = [];
+            if ($local = $this->config->config('language_text')) {
+                $args[] = $local;
+            }
+            return $this->make('Frogsystem\\Frogsystem\\LegacyText', $args);
         });
 
         // Modules
-        $this->connect('Frogsystem\\Frogsystem\\Routes');
-
-        // make myself global
-        global $FD;
-        $FD = $this;
+        $this->connect('Frogsystem\\FS2Core\\FS2Core');
     }
 
     public function run()
     {
         try {
             // TODO: Pre-Startup Hook
-            $this->db = new \sql(
+            $this->db = new Database(
                 $this->config->env('DB_HOST'),
                 $this->config->env('DB_NAME'),
                 $this->config->env('DB_USER'),
                 $this->config->env('DB_PASSWORD'),
-                $this->env('DB_PREFIX')
+                $this->config->env('DB_PREFIX')
             );
-            $this->set('sql', $this->db);
+            $this->set('Frogsystem\\Frogsystem\\Database', $this->db);
 
             $this->config->loadConfigsByHook('startup');
+
+            $this->text->setLocal($this->config->config('language_text'));
 
         } catch (\Exception $e) {
             // DB Connection failed
@@ -107,7 +112,7 @@ class Frogsystem2 extends GlobalData {
         @define('FS2ADMIN', FS2SOURCE.'/admin');
         @define('FS2CONFIG', FS2SOURCE.'/config');
         @define('FS2LANG', FS2SOURCE.'/lang');
-        @define('FS2APPLETS', FS2CONTENT.'/applets');
+        @define('FS2APPLETS', FS2SOURCE . '/lib/frogsystem/fs2core/src/applets');
         @define('FS2MEDIA', FS2CONTENT.'/media');
         @define('FS2STYLES', FS2CONTENT.'/styles');
         @define('FS2UPLOAD', FS2CONTENT.'/upload');
@@ -130,24 +135,4 @@ class Frogsystem2 extends GlobalData {
 
     }
 
-    protected function registerAutoload(array $loaders)
-    {
-        foreach ($loaders as $loader) {
-            spl_autoload_register($loader);
-        }
-    }
-
-    public function legacyLoader($classname)
-    {
-        $class = explode("\\", $classname);
-        $filepath = FS2SOURCE . '/libs/class_' . end($class) . '.php';
-
-        if (file_exists($filepath)) {
-            include_once($filepath);
-        } else if (strtolower(substr(end($class), -9)) === 'exception') {
-            include_once(FS2SOURCE . '/libs/exceptions.php');
-        } else {
-            return false;
-        }
-    }
 }

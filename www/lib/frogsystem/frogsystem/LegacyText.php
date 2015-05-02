@@ -6,16 +6,30 @@ class LegacyText implements \ArrayAccess {
 
     private $container = [];
 
-    public function __construct(LegacyConfig $config) {
-        $lang = $config->config('language_text');
+    public function __construct($local = null)
+    {
+        if (!$local) {
+            $local = $this->detectLanguage();
+        }
 
         $this->container = array(
-            'frontend'  => new \lang ($lang, 'frontend'),
-            'admin'     => new \lang ($lang, 'admin'),
-            'template'  => new \lang ($lang, 'template'),
-            'menu'      => new \lang ($lang, 'menu'),
-            'fscode'    => new \lang ($lang, 'fscode'),
+            'frontend' => new Lang($local, 'frontend'),
+            'admin' => new Lang($local, 'admin'),
+            'template' => new Lang($local, 'template'),
+            'menu' => new Lang($local, 'menu'),
+            'fscode' => new Lang($local, 'fscode'),
         );
+    }
+
+    /**
+     * @param $local
+     */
+    public function setLocal($local)
+    {
+        foreach ($this->container as $lang) {
+            /** @var Lang $lang */
+            $lang->setLocal($local);
+        }
     }
 
     public function offsetSet($offset, $value) {
@@ -36,5 +50,40 @@ class LegacyText implements \ArrayAccess {
 
     public function offsetGet($offset) {
         return isset($this->container[$offset]) ? $this->container[$offset] : null;
+    }
+
+
+    protected function detectLanguage($default = 'de_DE')
+    {
+        $langs = array();
+        unset($_SESSION['user_lang']);
+        if (!isset($_SESSION['user_lang']) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+            // break up string into pieces (languages and q factors)
+            preg_match_all('/([a-z]{1,8}(?:-([a-z]{1,8}))?)\s*(;\s*q\s*=\s*(1|0\.[0-9]+))?/i', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $lang_parse);
+            //~ var_dump($lang_parse);
+            if (count($lang_parse[1])) {
+                // create a list like "en" => 0.8
+                $langs = array_combine($lang_parse[1], $lang_parse[4]);
+
+                // set default to 1 for any without q factor
+                foreach ($langs as $lang => $val) {
+                    if ($val === '') $langs[$lang] = 1;
+                }
+
+                // sort list based on value
+                arsort($langs, SORT_NUMERIC);
+            }
+        }
+
+        foreach ($langs as $lang => $p) {
+            switch ($lang) {
+                case 'en':
+                    return 'en_US';
+                case 'de':
+                    return 'de_DE';
+            }
+        }
+
+        return $default;
     }
 }

@@ -17,6 +17,7 @@
     "autoload": {
         "psr-4": {
           "Frogsystem\\Frogsystem\\": "www/lib/frogsystem/frogsystem",
+          "Frogsystem\\FS2Core\\": "www/lib/frogsystem/fs2core",
           "Frogsystem\\Metamorphosis\\": "www/lib/frogsystem/metamorphosis",
           "Frogsystem\\Spawn\\": "www/lib/frogsystem/spawn"
         }

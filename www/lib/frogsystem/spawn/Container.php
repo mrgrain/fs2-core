@@ -34,6 +34,7 @@ class Container implements Contracts\Container, \ArrayAccess
             $this->delegate = $container;
         }
         $this->set('Interop\Container\ContainerInterface', $this);
+        $this->set('Frogsystem\Spawn\Contracts\Container', $this);
         $this->set('Frogsystem\Spawn\Container', $this);
         $this->set(get_called_class(), $this);
     }

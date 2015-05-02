@@ -10,8 +10,7 @@ class LegacyConfig {
     function __construct(Frogsystem2 $app)
     {
         $this->app = $app;
-        require_once(FS2SOURCE.'/libs/config/ConfigEnv.php');
-        $this->config['env'] = new \ConfigEnv();
+        $this->config['env'] = new Config\ConfigEnv();
     }
 
 
@@ -37,10 +36,6 @@ class LegacyConfig {
 
     // load configs by hook
     public function loadConfigsByHook($hook, $reload = false) {
-
-        // include ConfigData
-        require_once(FS2SOURCE . '/libs/class_ConfigData.php');
-
         // Load configs from DB
         $data = $this->app->db->conn()->prepare(
             'SELECT * FROM '.$this->app->db->getPrefix().'config
@@ -57,11 +52,12 @@ class LegacyConfig {
     // create config object
     private function createConfigObject($name, $data, $json) {
         // Load corresponding class and get config array
-        $class_name = "Config".ucfirst(strtolower($name));
-        require_once(FS2SOURCE.'/libs/class_ConfigData.php');
-        @include_once(FS2SOURCE.'/libs/config/'.$class_name.'.php');
-        if (!class_exists($class_name, false))
-            $class_name = 'ConfigData';
+        $class_name = "Frogsystem\\Frogsystem\\Config\\Config" . ucfirst(strtolower($name));
+
+        if (!class_exists($class_name)) {
+            $class_name = "Frogsystem\\Frogsystem\\Config\\ConfigData";
+        }
+
         return new $class_name($data, $json);
     }
 
@@ -97,7 +93,7 @@ class LegacyConfig {
 
             // error
         } else {
-            Throw Exception('Invalid Call of method "setConfig"');
+            Throw \Exception('Invalid Call of method "setConfig"');
         }
     }
 
@@ -148,7 +144,7 @@ class LegacyConfig {
 
             // error
         } else {
-            Throw Exception('Invalid Call of method "config"');
+            Throw \Exception('Invalid Call of method "config"');
         }
     }
 
