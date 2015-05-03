@@ -47,7 +47,7 @@ class Frogsystem2 extends WebApp
         $this['Frogsystem\\Frogsystem\\LegacyConfig'] = $this->config;
         $this->router = $this->make('Frogsystem\\Frogsystem\\Router');
         $this['Frogsystem\\Frogsystem\\Router'] = $this->router;
-        $this->once('text', function() {
+        $this['text'] = $this->once(function() {
             $args = [];
             if ($local = $this->config->config('language_text')) {
                 $args[] = $local;

@@ -17,7 +17,7 @@ class Container implements Contracts\Container, \ArrayAccess
     protected $container = [];
 
     /**
-     * The container for delegated lookup
+     * The container for delegated lookup.
      * @var ContainerInterface
      */
     protected $delegate;
@@ -33,6 +33,8 @@ class Container implements Contracts\Container, \ArrayAccess
         if ($container) {
             $this->delegate = $container;
         }
+
+        // todo: better self propagation
         $this->set('Interop\Container\ContainerInterface', $this);
         $this->set('Frogsystem\Spawn\Contracts\Container', $this);
         $this->set('Frogsystem\Spawn\Container', $this);
@@ -48,32 +50,57 @@ class Container implements Contracts\Container, \ArrayAccess
     }
 
     /**
-     * Sets the entry.
-     * @param $id
-     * @param $value
+     * Binds the abstract to a value.
+     * @param string $abstract
+     * @param mixed $value
      */
-    public function set($id, $value)
+    public function set($abstract, $value)
     {
-        $this->container[$id] = $value;
+        $this->container[$abstract] = $value;
     }
 
     /**
      * Shorthand to invoke the callable just once (when needed). Save to result to the container.
-     * @param $id
-     * @param $value
+     * @param string $abstract
+     * @param Callable $value
      */
-    public function once($id, $value)
+    public function once(Callable $value)
     {
-        $this->set($id, function(Container $app) use ($id, $value) {
-            $app->set($id, $value());
-            return $app->get($id);
-        });
+        return function () use ($value) {
+            static $result;
+            if (!$result) {
+                $result = $value();
+            }
+            return $result;
+        };
+    }
+
+    /**
+     * Shorthand to alias the abstract to several names.
+     * @param $abstract
+     * @param $aliases
+     * @param string $value
+     * @return callable
+     */
+    public function alias($abstract, $aliases, $value)
+    {
+        $this->set($abstract, $value);
+
+        // set aliases
+        if (!is_array($aliases)) {
+            $aliases = [$aliases];
+        }
+        foreach ($aliases as $alias) {
+            $this->set($alias, function () use ($abstract) {
+                return $this->get($abstract);
+            });
+        }
     }
 
     /**
      * Shorthand for a factory.
      * @param string $value
-     * @return callable
+     * @return Callable
      */
     public function factory($value)
     {
@@ -85,7 +112,7 @@ class Container implements Contracts\Container, \ArrayAccess
     /**
      * Protect a value from being executed as callable on retrieving.
      * @param $value
-     * @return callable
+     * @return Callable
      */
     public function protect($value)
     {
@@ -95,16 +122,16 @@ class Container implements Contracts\Container, \ArrayAccess
     }
 
     /**
-     * Returns an entry by its identifier.
+     * Invokes the registered entry for an abstract and returns the result.
      * @throws Exceptions\NotFoundException  No entry was found for this identifier.
      * @throws Exceptions\ContainerException Error while retrieving the entry.
-     * @param string $id Identifier of the entry.
+     * @param string $abstract The abstract to store in the container.
      * @return mixed The entry.
      */
-    public function get($id) {
+    public function get($abstract) {
         // element in container
-        if ($this->has($id)) {
-            $entry = &$this->container[$id];
+        if ($this->has($abstract)) {
+            $entry = &$this->container[$abstract];
 
             // Closures will be invoked with DI and the result returned
             if (is_object($entry) && ($entry instanceof \Closure)) {
@@ -112,41 +139,53 @@ class Container implements Contracts\Container, \ArrayAccess
             }
 
             // return the unchanged value
-            return $this->container[$id];
+            return $this->container[$abstract];
         }
 
-        throw new Exceptions\NotFoundException();
+        throw new Exceptions\NotFoundException("Abstract '{$abstract}' not found.");
     }
 
     /**
-     * Returns true if an entry with that identifier exists.
+     * Returns true if an entry for the abstract exists.
      * False otherwise.
-     * @param string $id Identifier of the entry.
+     * @param string $abstract The abstract to be looked up.
      * @return boolean
      */
-    public function has($id)
+    public function has($abstract)
     {
-        return is_string($id) && isset($this->container[$id]);
+        return is_string($abstract) && isset($this->container[$abstract]);
     }
 
+
     /**
-     * Make a new instance of an object with DI.
-     * @param string $class
+     * Build a new instance of a concrete using Dependency Injection.
+     * @param $concrete
      * @param array $args
      * @return mixed
-     * @throws Exceptions\ContainerException
      */
-    public function make($class, array $args = [])
+    public function build ($concrete, array $args = [])
     {
-        //todo interfaces! $app->make('App\Contract\Spam')
-
         // get reflection and parameters
-        $reflection = new \ReflectionClass($class);
+        $reflection = new \ReflectionClass($concrete);
         $constructor = $reflection->getConstructor();
 
         // Return new instance
         $arguments = $this->inject($constructor, $args);
         return $reflection->newInstanceArgs($arguments);
+    }
+
+    /**
+     * Make a new instance of an object using Dependency Injection.
+     * @param string $abstract
+     * @param array $args
+     * @return mixed
+     */
+    public function make($abstract, array $args = [])
+    {
+        //todo interfaces! $app->make('App\Contract\Spam')
+
+        // Return new instance
+        return $this->build($abstract, $args);
     }
 
     /**
@@ -159,16 +198,17 @@ class Container implements Contracts\Container, \ArrayAccess
     public function invoke(Callable $callable, array $args = [])
     {
         // object/class method
-        // todo:: check for string ::
-        if (is_array($callable) && 2 <= count($callable)) {
+        if (is_string($callable) && false !== strpos($callable, '::')) {
+            $callable = explode('::', $callable);
+        }
+        if (is_array($callable)) {
             $reflection = new \ReflectionMethod($callable[0], $callable[1]);
             $arguments = $this->inject($reflection, $args);
             return $reflection->invokeArgs($callable[0], $arguments);
         }
 
-        // closure, function and other callables
-        $function = &$callable;
-        $reflection = new \ReflectionFunction($function);
+        // closures, functions and other callables
+        $reflection = new \ReflectionFunction($callable);
         $arguments = $this->inject($reflection, $args);
         return $reflection->invokeArgs($arguments);
     }
@@ -202,13 +242,17 @@ class Container implements Contracts\Container, \ArrayAccess
             }
 
             // from argument list
-            if (!empty($args)) {
+            if (array_key_exists($param->name, $args)) {
+                $arguments[] = $args[$param->name];
+                unset($args[$param->name]);
+                continue;
+            } else if (!empty($args)) {
                 $arguments[] = array_shift($args);
                 continue;
             }
 
-            // optional parameter
-            if ($param->isOptional()) {
+            // optional parameter with default value
+            if ($param->isDefaultValueAvailable()) {
                 $arguments[] =  $param->getDefaultValue();
                 continue;
             }
@@ -223,79 +267,79 @@ class Container implements Contracts\Container, \ArrayAccess
 
     /**
      * Sets an entry as property to the given value.
-     * @param string $id    Identifier of the entry.
+     * @param string $abstract    Identifier of the entry.
      * @param mixed  $value The Value of the entry.
      */
-    public function __set($id, $value)
+    public function __set($abstract, $value)
     {
-        $this->set($id, $value);
+        $this->set($abstract, $value);
     }
 
     /**
      * Returns the given entry via property.
-     * @param string $id Identifier of the entry.
+     * @param string $abstract Identifier of the entry.
      * @return mixed The entry.
      */
-    public function __get($id)
+    public function __get($abstract)
     {
-        return $this->get($id);
+        return $this->get($abstract);
     }
 
     /**
      * Returns whether a property exists or not.
-     * @param $id
+     * @param $abstract
      * @return bool
      */
-    public function __isset($id)
+    public function __isset($abstract)
     {
-        return $this->has($id);
+        return $this->has($abstract);
     }
 
     /**
      * Unset an entry via property.
-     * @param $id
+     * @param $abstract
      */
-    public function __unset($id)
+    public function __unset($abstract)
     {
-        unset($this[$id]);
+        unset($this[$abstract]);
     }
 
     /**
-     * @param $offset
+     * @param $abstract
      * @param $value
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($abstract, $value)
     {
-        $this->set($offset, $value);
+        $this->set($abstract, $value);
     }
 
     /**
-     * @param $offset
+     * @param $abstract
      * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($abstract)
     {
-        return $this->has($offset);
+        return $this->has($abstract);
     }
 
     /**
      * Unset an entry via array interface.
-     * @param $offset
+     * @param $abstract
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($abstract)
     {
-        unset($this->container[$offset]);
+        unset($this->container[$abstract]);
     }
 
     /**
-     * @param $offset
+     * @param $abstract
      * @return null
      */
-    public function offsetGet($offset)
+    public function offsetGet($abstract)
     {
-        if (!$this->has($offset)) {
+        if (!$this->has($abstract)) {
             return null;
         }
-        return $this->get($offset);
+        return $this->get($abstract);
     }
 }
